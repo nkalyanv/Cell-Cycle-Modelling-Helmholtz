@@ -10,7 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matlab.engine
 
-medium = 'SCD'
+medium = 'SCGE'
 time_of_protein_production = {'YPD' : 24, 'SCD' : 28, 'SCGE' : 35.5}
 mrna_amount = {'YPD' : 30, 'SCD' : 21, 'SCGE' : 10}
 k_pre = {'SCGE' : (0.000819698921725553, -0.0188097689371610), 
