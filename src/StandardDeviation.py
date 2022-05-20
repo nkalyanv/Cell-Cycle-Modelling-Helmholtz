@@ -3,9 +3,9 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-YPD = np.load('YPDprotein.npy')
-SCD = np.load('SCDprotein.npy')
-SCGE = np.load('SCGEprotein.npy')
+YPD = np.load('temp/YPDprotein.npy')
+SCD = np.load('temp/SCDprotein.npy')
+SCGE = np.load('temp/SCGEprotein.npy')
 
 YPD_mean = np.mean(YPD)
 SCD_mean = np.mean(SCD)
