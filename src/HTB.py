@@ -10,7 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matlab.engine
 
-medium = 'SCGE'
+medium = 'YPD'
 time_of_protein_production = {'YPD' : 24, 'SCD' : 28, 'SCGE' : 35.5}
 mrna_amount = {'YPD' : 30, 'SCD' : 21, 'SCGE' : 10}
 k_pre = {'SCGE' : (0.000819698921725553, -0.0188097689371610), 
@@ -24,7 +24,7 @@ c_growth = {'SCGE' : 0.0679, 'SCD' : 0.431003418444061, 'YPD' : 0.12156394630427
 m_growth2 = {'SCGE' : 0.0025, 'SCD' : 0.00832937615274411, 'YPD' : 0.0128757567130024}  
 c_growth2 = {'SCGE' : 0.2351, 'SCD' : 0.132857850897034, 'YPD' : -0.0274331810933783}
 trackback_time = {'SCGE' : 13, 'SCD' : 10, 'YPD' : 7}
-parameters_file_path = {'SCGE' : 'Data\HTBData\HTB2_SCGE_parameters_full.mat', 'SCD' : 'Data\HTBData\HTB2_SCD_parameters_full.mat', 'YPD' : 'Data\HTBData\HTB2_YPD_parameters_full.mat'}
+parameters_file_path = {'SCGE' : '..\Data\HTBData\HTB2_SCGE_parameters_full.mat', 'SCD' : '..\Data\HTBData\HTB2_SCD_parameters_full.mat', 'YPD' : '..\Data\HTBData\HTB2_YPD_parameters_full.mat'}
 
 def extend(arr):
     for i in range(len(arr)):
@@ -45,8 +45,8 @@ def growth_rate2(vol):
     return m*vol + c
 
 
-parameters = scipy.io.loadmat('Data/20170316 ACT1pr-mCi Fit Parameters Mother G2 2D Lambda.mat')
-sys.stdout = open("Debug/CellCycleDebug.txt", "w")
+parameters = scipy.io.loadmat(parameters_file_path[medium])
+sys.stdout = open("../Debug/CellCycleDebug.txt", "w")
 
 #Simulation Parameters controlling Number of cells: Total cells = cell_num * cell_bin_num.
 # These will be spread equally through the g1_bin_range
@@ -60,13 +60,6 @@ bud_prob_beta_1 = G1_lambda[0]
 bud_prob_M0_1 = -G1_lambda[1]/bud_prob_beta_1
 
 G2_lambda_2d= k_post[medium]
-
-constant_growth_rate = parameters['all_fit_act'][0]
-constant_daughter_growth_rate = math.log((parameters['daughter_growth_fit_act'][0][0]*3 + 1))/3
-bud_mass_correction = parameters['d_b_diff']
-
-poststart_G1_timer = parameters['PSG1_timer_fit']
-SG2M_timer = parameters['SG2M_timer_fit']
 
 #G1 Simulation Parameters
 n_cells = cell_bin_num * cell_num #Total number of cells
@@ -100,19 +93,6 @@ G1_growth = np.zeros((n_cells, 1))
 
 current_time = 0
 
-# Setup protein synthesis variables 
-
-p1_syn_G2 = 0            #AU/min constant portion of synthesis rate
-p1_syn_rate_G2 = .5          #AU/(min*fl) scaling portion of synthesis rate
-p1_syn_G1 = 0              #AU/min constant portion of synthesis rate
-p1_syn_rate_G1 = 0          #AU/(min*fl) scaling portion of synthesis rate
-p2_syn_G2 = .5              #AU/min constant portion of synthesis rate
-p2_syn_rate_G2 = 0          #AU/(min*fl) scaling portion of synthesis rate
-p2_syn_G1 = 0              #AU/min constant portion of synthesis rate
-p2_syn_rate_G1 = 0          #AU/(min*fl) scaling portion of synthesis rate
-partition1 = 1          #partitioning behavior, 0 means proportional, 1 fixed
-partition2 = 1  
-
 cell_protein = np.zeros((n_cells, 1))
 protein_synthesis_counter = np.zeros((n_cells, 1))
 protein_synthesis_counter[:] = time_of_protein_production[medium]
@@ -122,8 +102,6 @@ while(np.all(size_at_start) == False): #Checks if all values are non-zero. That 
     current_time += 1
     i = current_time - 1
 
-    # print('Current Time:', current_time)
-    # print('Cells Remaining:', n_cells - np.sum(size_at_start > 0))
     bud_prob = bud_prob_beta_1*(cell_v[:, i] - bud_prob_M0_1)  
     bud_prob[bud_prob < 0] = 0
     bud_prob[bud_prob > 1] = 1
@@ -148,13 +126,7 @@ while(np.all(size_at_start) == False): #Checks if all values are non-zero. That 
             G1_growth[j] = cell_v[j][i] - size_at_birth[j]
             cell_list_G1.remove(j)
 
-# print('Current Time:', current_time)
-# print('Cells Remaining:', n_cells - np.sum(size_at_start > 0))
-
-#print(size_at_start)
-#print(cell_v)
-
-#G2-Simulation
+# G2-Simulation
 
 n_cells = cell_num * cell_bin_num
 cell_v = size_at_start
@@ -162,12 +134,8 @@ cell_cycle = np.zeros((n_cells,1))
 cell_bud = np.zeros((n_cells,1))  
 G2_counter = np.zeros((n_cells,1))  
 mother_daughter = np.zeros((n_cells,1))
-mother_G1_counter = poststart_G1_timer[0][0]*cell_v + poststart_G1_timer[0][1]
 post_start_G1 = np.ones((n_cells,1))
 start_size = cell_v
-G2_length = SG2M_timer[0][0]*cell_v + SG2M_timer[0][1]
-
-
 
 current_time = 0
 cell_list_G2 = set(range(0, n_cells))
@@ -182,8 +150,6 @@ mother_bud_mass_defect = np.zeros((n_cells,1))
 while(len(cell_list_G2) > 0):
     current_time += 1
     i = current_time - 1
-    #print("Current Time:", current_time)
-    #print("Cells Remaining:", len(cell_list_G2))
 
     cell_v, cell_bud, cell_cycle, post_start_G1, post_start_counter, G2_counter, cell_protein = extend([cell_v, cell_bud, cell_cycle, post_start_G1, post_start_counter, G2_counter, cell_protein])    
 
@@ -252,39 +218,23 @@ print("Average protein content:", np.mean(final_protein_content))
 
 np.save(medium + 'protein', final_protein_content)
 #Plotting Testing
-exit(0)
 n_bins = 20
-n_bins_data = 25
-[protein_content,error,fin_size] = Util.KS_bindata_mean_20140916(size_at_div[:, -1], final_protein_content, n_bins, 3)
+[protein_content,error,fin_size] = Utils.KS_bindata_mean_20140916(size_at_div[:, -1], final_protein_content, n_bins)
 plt.errorbar(fin_size, protein_content, error, color = "red")
-
 sns.scatterplot(y = final_protein_content, x = size_at_div[:, -1])
 plt.title(medium)
 plt.xlabel("Final Cell Size")
 plt.ylabel("Protein Content")
-plt.savefig('Presentation/ProteinvSize' + medium + '.png')
+plt.savefig('../Plots/ProteinvSize' + medium + '.png')
 
 plt.clf()
-exit()
 
-plot_parameters = Util.loadmat(parameters_file_path[medium])
+plot_parameters = Utils.loadmat(parameters_file_path[medium])
 totvolSG2M = plot_parameters['pulsedata']['totvolSG2M']
 totvolumeendSG2M = plot_parameters['pulsedata']['totvolumeendSG2M']
 sns.scatterplot(totvolSG2M[:,0], totvolumeendSG2M, color = 'black')
 
-eng = matlab.engine.start_matlab()
-#volumecytokinesis_mean,volumecytokinesis_error,volumebudemerg_binsmean = eng.KS_bindata_mean_20140916(totvolSG2M[:,1], totvolumeendSG2M, 20)
-totvolSG2M_matlab = matlab.double(totvolSG2M[:,0].tolist())
-totvolumeendSG2M_matlab = matlab.double(totvolumeendSG2M.tolist())
-[volumecytokinesis_mean,volumecytokinesis_error,volumebudemerg_binsmean] = eng.KS_bindata_mean_20140916(totvolSG2M_matlab, totvolumeendSG2M_matlab, 20, nargout = 3)
-
-[volumecytokinesis_error] = volumecytokinesis_error
-[volumebudemerg_binsmean] = volumebudemerg_binsmean
-[volumecytokinesis_mean] = volumecytokinesis_mean
-volumecytokinesis_error = np.array(volumecytokinesis_error)
-volumebudemerg_binsmean = np.array(volumebudemerg_binsmean)
-volumecytokinesis_mean = np.array(volumecytokinesis_mean)
-
+[volumecytokinesis_mean,volumecytokinesis_error,volumebudemerg_binsmean] = Utils.KS_bindata_mean_20140916(totvolSG2M[:,0], totvolumeendSG2M, 20, nargs_out = 3)
 plt.errorbar(volumebudemerg_binsmean, volumecytokinesis_mean, volumecytokinesis_error, color = "red")
 
 
@@ -292,17 +242,9 @@ i = ~np.isnan(volumecytokinesis_mean)
 p05 = np.polyfit(volumebudemerg_binsmean[i],volumecytokinesis_mean[i],1)
 fit05 = np.polyval(p05, volumebudemerg_binsmean[i])
 sns.lineplot(volumebudemerg_binsmean[i],fit05,color = 'green')
-# [y_size_at_division,error, x_size_at_budemg] = KS_bindata_mean_20140916(...
-#     size_at_start,size_at_div,n_bins);
-size_at_start_matlab = matlab.double(size_at_start.tolist())
-size_at_div_matlab = matlab.double(size_at_div.tolist())
-[y_size_at_division,error,x_size_at_budemg] = eng.KS_bindata_mean_20140916(size_at_start_matlab, size_at_div_matlab, n_bins, nargout = 3)
-
-[x_size_at_budemg] = x_size_at_budemg
-[y_size_at_division] = y_size_at_division
-[error] = error
+[y_size_at_division,error,x_size_at_budemg] = Utils.KS_bindata_mean_20140916(size_at_start, size_at_div, n_bins, nargs_out = 3)
 plt.errorbar(x_size_at_budemg, y_size_at_division, error, color = "blue")
 plt.title(medium)
 plt.xlabel("volume at bud emergence [fl]")
 plt.ylabel("volume at division [fl]")
-plt.savefig('Presentation\model_' + medium + '.png')
+plt.savefig('..\Plots\model_' + medium + '.png')
