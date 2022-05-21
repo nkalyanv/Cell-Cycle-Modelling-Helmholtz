@@ -1,6 +1,5 @@
 from tracemalloc import start
 import scipy.io
-import math
 import numpy as np
 import sys
 import random
@@ -8,7 +7,6 @@ import copy
 import Utils
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matlab.engine
 
 medium = 'YPD'
 time_of_protein_production = {'YPD' : 24, 'SCD' : 28, 'SCGE' : 35.5}
