@@ -1,6 +1,5 @@
 from tracemalloc import start
 import scipy.io
-import math
 import numpy as np
 import sys
 import random
@@ -8,22 +7,29 @@ import copy
 import Utils
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matlab.engine
 
-medium = 'YPD'
+medium = 'SCGE'
+
 time_of_protein_production = {'YPD' : 24, 'SCD' : 28, 'SCGE' : 35.5}
-mrna_amount = {'YPD' : 30, 'SCD' : 21, 'SCGE' : 10}
-k_pre = {'SCGE' : (0.000819698921725553, -0.0188097689371610), 
-        'SCD' : (0.00184737098085802, -0.0680646943946685),
-        'YPD' : (0.00128158522350159, -0.0402542589098766)}
-k_post = {'SCGE' : (0.000517801668699920,  0, 0.00291919355773482),
-        'SCD' : (0.00120492000339289, 0, -0.0149616470551539),
-        'YPD' : (0.000753825630525158, 0, -0.00516870052013743)}
-m_growth = {'SCGE' : 0.0031, 'SCD' : 0.000133638701039850, 'YPD' : 0.00883173164497234}
-c_growth = {'SCGE' : 0.0679, 'SCD' : 0.431003418444061, 'YPD' : 0.121563946304272}
-m_growth2 = {'SCGE' : 0.0025, 'SCD' : 0.00832937615274411, 'YPD' : 0.0128757567130024}  
-c_growth2 = {'SCGE' : 0.2351, 'SCD' : 0.132857850897034, 'YPD' : -0.0274331810933783}
+
 trackback_time = {'SCGE' : 13, 'SCD' : 10, 'YPD' : 7}
+mrna_amount = {'YPD' : 30, 'SCD' : 21, 'SCGE' : 10}
+k_pre = {'SCGE' : (0.000979554896913755, -0.0246254114090489), 
+        'SCD' : (0.00117358418816900, -0.0337438108854191),
+        'YPD' : (0.00128952510678458, -0.0392751771327524)}
+k_post = {'SCGE' : (0.000978964053106707,  0, -0.0107700336183466),
+        'SCD' : (0.00102472091756443, 0, -0.0134007070518360),
+        'YPD' : (0.000875120797613734, 0, -0.00804804723947798)}
+
+#Growth Rate 1-m_growth -> p1(1), c_growth -> p1(2)
+m_growth = {'SCGE' : 0.00222019056145497, 'SCD' : 0.00450131417714158, 'YPD' : 0.00423348155253518}
+c_growth = {'SCGE' : 0.104453745081658, 'SCD' : 0.213401235570336, 'YPD' : 0.369664105717204}
+
+#Growth Rate 2
+m_growth2 = {'SCGE' : 0.00330368790213606, 'SCD' : 0.0123947445945605, 'YPD' : 0.0142057829609836}  
+c_growth2 = {'SCGE' : 0.188960420713999, 'SCD' : -0.166518313652299, 'YPD' : -0.152637732413614}
+
+#Parameters File Paths
 parameters_file_path = {'SCGE' : '..\Data\HTBData\HTB2_SCGE_parameters_full.mat', 'SCD' : '..\Data\HTBData\HTB2_SCD_parameters_full.mat', 'YPD' : '..\Data\HTBData\HTB2_YPD_parameters_full.mat'}
 
 def extend(arr):
@@ -36,6 +42,7 @@ def growth_rate1(vol):
     #p1 in matlab code growthrate_dv_code_new
     m = m_growth[medium]
     c = m_growth[medium]
+    #return np.exp(m) + c
     return m*vol + c
 
 def growth_rate2(vol):
@@ -230,21 +237,20 @@ plt.savefig('../Plots/ProteinvSize' + medium + '.png')
 plt.clf()
 
 plot_parameters = Utils.loadmat(parameters_file_path[medium])
-totvolSG2M = plot_parameters['pulsedata']['totvolSG2M']
+totvolSG2M = plot_parameters['pulsedata']['totvolumebirth']
 totvolumeendSG2M = plot_parameters['pulsedata']['totvolumeendSG2M']
-sns.scatterplot(totvolSG2M[:,0], totvolumeendSG2M, color = 'black')
+sns.scatterplot(totvolSG2M, totvolumeendSG2M, color = 'black')
 
-[volumecytokinesis_mean,volumecytokinesis_error,volumebudemerg_binsmean] = Utils.KS_bindata_mean_20140916(totvolSG2M[:,0], totvolumeendSG2M, 20, nargs_out = 3)
+[volumecytokinesis_mean,volumecytokinesis_error,volumebudemerg_binsmean] = Utils.KS_bindata_mean_20140916(totvolSG2M, totvolumeendSG2M, 20, nargs_out = 3)
 plt.errorbar(volumebudemerg_binsmean, volumecytokinesis_mean, volumecytokinesis_error, color = "red")
-
 
 i = ~np.isnan(volumecytokinesis_mean)
 p05 = np.polyfit(volumebudemerg_binsmean[i],volumecytokinesis_mean[i],1)
 fit05 = np.polyval(p05, volumebudemerg_binsmean[i])
 sns.lineplot(volumebudemerg_binsmean[i],fit05,color = 'green')
-[y_size_at_division,error,x_size_at_budemg] = Utils.KS_bindata_mean_20140916(size_at_start, size_at_div, n_bins, nargs_out = 3)
+[y_size_at_division,error,x_size_at_budemg] = Utils.KS_bindata_mean_20140916(size_at_birth, size_at_div, n_bins, nargs_out = 3)
 plt.errorbar(x_size_at_budemg, y_size_at_division, error, color = "blue")
 plt.title(medium)
-plt.xlabel("volume at bud emergence [fl]")
+plt.xlabel("volume at birth [fl]")
 plt.ylabel("volume at division [fl]")
 plt.savefig('..\Plots\model_' + medium + '.png')

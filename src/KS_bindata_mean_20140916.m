@@ -14,7 +14,7 @@ maxval=max(x);
  for k = [1:numbins],
  ind = find(bin==k);
  %if (~isempty(ind))
- if (sum(bin==k)>=3)
+ if (sum(bin==k)>=2)
  mu(k) = nanmean(y(ind));
  error(k)=nanstd(y(ind))/sqrt(sum(~isnan(y(ind))));
 %error(k)=nanstd(y(ind));
