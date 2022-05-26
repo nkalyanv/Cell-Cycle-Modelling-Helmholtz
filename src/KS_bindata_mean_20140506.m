@@ -5,7 +5,7 @@
 
 
  bins = linspace(min(x), max(x), numbins)
-  bins2=bins+0.5*(bins(2)-bins(1))
+ bins2=bins+0.5*(bins(2)-bins(1))
  %bins = linspace(3000, 20000, numbins);
  
  [n,bin] = histc(x, bins);

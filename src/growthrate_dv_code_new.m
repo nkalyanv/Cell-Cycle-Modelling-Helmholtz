@@ -8,7 +8,7 @@ volumeG1=(z(:,1:(size(z,2)-1))+z(:,2:size(z,2)))/2;%pulsedata.totvolG1_daughters
 idxValid=~isnan(growthrate_all);
 growthrate_idx=growthrate_all(idxValid);
 volumeG1_idx=volumeG1(idxValid);
-[growthrate_all_mean,growthrate_all_error,volumeG1_binsmean]=KS_bindata_mean_20140506(volumeG1_idx,growthrate_idx,20);
+[growthrate_all_mean,growthrate_all_error,volumeG1_binsmean]=KS_bindata_mean_20140506(volumeG1_idx,growthrate_idx,15);
 plot(volumeG1,growthrate_all,'b','Linestyle','none','marker','o')
 xlabel('volume [fl]')
 ylabel('growthrate G1 [a.u.]')
@@ -26,9 +26,6 @@ i=~isnan(growthrate_all_mean);
 fit1=polyval(p1,volumeG1_binsmean);
 plot(volumeG1_binsmean,fit1,'b')
 hold off
-
-
-
 
 %% SG2M Data
 
@@ -63,8 +60,6 @@ ylabel('growth rate SG2M [a.u.]')
 [p11,s11]=polyfit(volumetot_binsmean(j),growthrate_tot_mean(j),1);
 fit11=polyval(p11,volumetot_binsmean(j));
 plot(volumetot_binsmean(j),fit11,'r')
-
-
 
 [ii]= find(volumetot_binsmean > 65) ;%fit two
 vol=volumetot_binsmean(ii);

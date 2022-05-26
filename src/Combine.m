@@ -39,4 +39,10 @@ sz2 = size(b);
 dim = min(sz1(2), sz2(2));
 pulsedata.volbud = cat(1, a(:, 1:dim), b(:, 1:dim));
 
+a = data1.pulsedata.totvolumebirth;
+b = data2.pulsedata.totvolumebirth;
+sz1 = size(a);
+sz2 = size(b);
+dim = min(sz1(2), sz2(2));
+pulsedata.totvolumebirth = cat(2, a, b);
 save("CombinedYPD", "pulsedata");
