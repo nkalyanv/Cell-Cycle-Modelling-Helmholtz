@@ -8,7 +8,7 @@ import Utils
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-medium = 'SCGE'
+medium = 'YPD'
 
 time_of_protein_production = {'YPD' : 24, 'SCD' : 28, 'SCGE' : 35.5}
 
@@ -110,9 +110,9 @@ while(np.all(size_at_start) == False): #Checks if all values are non-zero. That 
     i = current_time - 1
 
     bud_prob = bud_prob_beta_1*(cell_v[:, i] - bud_prob_M0_1)  
+    bud_prob = 1 - np.exp(-bud_prob)
     bud_prob[bud_prob < 0] = 0
     bud_prob[bud_prob > 1] = 1
-    bud_prob = 1 - np.exp(-bud_prob)
     
     bud_len = len(bud_prob)
     bud = np.zeros(bud_len)
@@ -125,7 +125,7 @@ while(np.all(size_at_start) == False): #Checks if all values are non-zero. That 
     for j in copy.copy(cell_list_G1):
 
         dv = growth_rate1(cell_v[j])       
-        cell_v[j]= cell_v[j][i] + dv
+        cell_v[j] = cell_v[j][i] + dv
         cell_volumes[j].append(cell_v[j][i])
         if(bud[j] == 1): #If Cell passes start
             size_at_start[j] = cell_v[j][i]
@@ -163,19 +163,19 @@ while(len(cell_list_G2) > 0):
     for k in copy.copy(cell_list_G2):
         dv2 = growth_rate2(cell_v[k][i - 1])
         if(cell_cycle[k][i - 1] == 0): #Cell is in G1(Post-start)
-            if(post_start_G1[k][i - 1] == 1): #In post-start G1.
-                if(protein_synthesis_counter[k] > 0):
-                    cell_protein[k][i] = cell_protein[k][i - 1] + (dv2*mrna_amount[medium]/cell_v[k][i])                  
-                    protein_synthesis_counter[k] -= 1
-                else:
-                    cell_protein[k][i] = cell_protein[k][i - 1]
-                if(post_start_counter[k][i] > 0):
-                    cell_v[k][i] = cell_v[k][i - 1] + dv2
-                    cell_cycle[k][i] = 0
-                    cell_bud[k][i] = 0
-                    post_start_G1[k][i + 1] = 1
-                    post_start_counter[k][i] = post_start_counter[k][i - 1] - 1
-                elif(post_start_counter[k][i - 1] == 0):
+            # if(post_start_G1[k][i - 1] == 1): #In post-start G1.
+            #     if(protein_synthesis_counter[k] > 0):
+            #         cell_protein[k][i] = cell_protein[k][i - 1] + (dv2*mrna_amount[medium]/cell_v[k][i - 1])                  
+            #         protein_synthesis_counter[k] -= 1
+            #     else:
+            #         cell_protein[k][i] = cell_protein[k][i - 1]
+            #     if(post_start_counter[k][i] > 0):
+            #         cell_v[k][i] = cell_v[k][i - 1] + dv2
+            #         cell_cycle[k][i] = 0
+            #         cell_bud[k][i] = 0
+            #         post_start_G1[k][i + 1] = 1
+            #         post_start_counter[k][i] = post_start_counter[k][i - 1] - 1
+                if(post_start_counter[k][i - 1] == 0):
                     
                     mother_bud_mass_defect[k] = 0
                     cell_v[k][i] = cell_v[k][i] + mother_bud_mass_defect[k]
@@ -187,9 +187,13 @@ while(len(cell_list_G2) > 0):
                     protein_extra_time = trackback_time[medium]
                     idx = max(0, len(cell_volumes[k]) - protein_extra_time)
                     for m in range(protein_extra_time):
-                        z = min(idx + m, len(cell_volumes[k]) - 1)
-                        dv2 = growth_rate2(cell_volumes[k][z])
-                        cell_protein[k][i] = cell_protein[k][i] + (dv2*mrna_amount[medium]/cell_volumes[k][z])                  
+                        z = idx + m
+                        if(z >= len(cell_volumes[k])):
+                            break
+                        dv = growth_rate1(cell_volumes[k][z - 1])
+                        cell_protein[k][i] = cell_protein[k][i] + (dv*mrna_amount[medium]/cell_volumes[k][z - 1])                  
+
+    # prev + (m*vol + c)*mrna/vol -> prev + m*mrna + c*mrna/vol
 
         elif(cell_cycle[k][i - 1] == 1): #Cell is in G2
             div_prob = G2_lambda_2d[0]*cell_bud[k][i - 1] + G2_lambda_2d[1]*start_size[k] + G2_lambda_2d[2]
@@ -200,7 +204,7 @@ while(len(cell_list_G2) > 0):
             G2_counter[k][i - 1] = random.choices([0., 1.], weights = [div_prob, 1 - div_prob])[0]
             
             if(protein_synthesis_counter[k] > 0):
-                cell_protein[k][i] = cell_protein[k][i - 1] + (dv2*mrna_amount[medium]/cell_v[k][i])
+                cell_protein[k][i] = cell_protein[k][i - 1] + (dv2*mrna_amount[medium]/cell_v[k][i - 1])
                 protein_synthesis_counter[k] -= 1
             else:
                 cell_protein[k][i] = cell_protein[k][i - 1]
